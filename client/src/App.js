@@ -178,6 +178,7 @@ export default function App() {
       console.log(error);
     }
   };
+  // 投票メソッド
   const Vote = async () => {
     try {
       const { ethereum } = window;
@@ -201,6 +202,7 @@ export default function App() {
       console.log(error);
     }
   };
+  // 棄権票メソッド
   const VoteToAbstain = async () => {
     try {
       const { ethereum } = window;
@@ -223,6 +225,7 @@ export default function App() {
       console.log(error);
     }
   };
+  // 選挙終了メソッド
   const FinishElection = async () => {
     try {
       const { ethereum } = window;
@@ -250,6 +253,7 @@ export default function App() {
     }
   };
 
+  // 当選者取得メソッド
   const GetNewChairman = async () => {
     try {
       const { ethereum } = window;
@@ -321,6 +325,7 @@ export default function App() {
     };
   }, []);
 
+  // 立ち上げ時に、walletの接続確認、選挙期間の取得、表示を行う
   useEffect(() => {
     checkIfWalletIsConnected();
     GetElectionPeriod();
@@ -329,6 +334,7 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      {/* Header */}
       <AppBar position="relative">
         <Toolbar>
           <Typography variant="h6" color="inherit" noWrap>
@@ -358,8 +364,8 @@ export default function App() {
           )}
         </Toolbar>
       </AppBar>
+      {/* Main */}
       <main>
-        {/* Hero unit */}
         <Box
           sx={{
             bgcolor: "background.paper",
@@ -374,6 +380,7 @@ export default function App() {
               spacing={2}
               justifyContent="center"
             >
+              {/* 立候補用ボタンと情報入力用のModal */}
               <div>
                 <Button variant="contained" onClick={handleOpen}>
                   Run for Chairman
@@ -422,6 +429,7 @@ export default function App() {
                   </Box>
                 </Modal>
               </div>
+              {/* 投票用ボタンと情報入力用のModal */}
               <div>
                 <Button variant="outlined" onClick={handleVoteOpen}>
                   Vote to candidate
@@ -481,6 +489,7 @@ export default function App() {
                   </Box>
                 </Modal>
               </div>
+              {/* 棄権票用ボタン */}
               <Button variant="outlined" onClick={voteAbstain}>
                 vote to abstain
               </Button>
@@ -488,7 +497,7 @@ export default function App() {
           </Container>
         </Box>
 
-        {/* Finish Electionメソッド実行部分 */}
+        {/* 選挙終了時に使うFinish Electionメソッド */}
         <Box
           sx={{
             bgcolor: "background.paper",
@@ -513,6 +522,7 @@ export default function App() {
             </Stack>
           </Container>
         </Box>
+        {/* 立候補者情報の表示 */}
         {currentAccount &&
           allCandidates
             .slice(0)
@@ -533,7 +543,9 @@ export default function App() {
                 </div>
               );
             })}
+        {/* この選挙の終了時間を記載 */}
         <div>This election will finsh at {electionPeriod}</div>
+        {/* 現在の会長を表示 */}
         <div>Current Chairman: {currentChairman}</div>
       </main>
     </ThemeProvider>
