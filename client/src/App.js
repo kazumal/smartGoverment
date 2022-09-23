@@ -18,11 +18,14 @@ import {
 } from "@mui/material";
 
 const theme = createTheme();
-const candidates = [];
-const contractAddress = "0x17534083A73dA204C92B0b08ef515A8072517Ac1";
+const contractAddress = "0xdCc921eCE8A16F816087Bb0c1b365b43Ce4C31Bb";
 const contractABI = abi.abi;
 
 export default function App() {
+  //当選者用の定数
+  const [currentChairman, setCurrentChairman] = useState("");
+  //選挙期間の定数
+  const [electionPeriod, setElectionPeriod] = useState();
   // スマコンから全候補者情報を受け取るための配列
   const [allCandidates, setAllCandidates] = useState([]);
   //立候補者用modal用の定数
@@ -38,8 +41,6 @@ export default function App() {
   const handleVoteClose = () => setVoteOpen(false);
   //Voteメソッド用変数
   const [candidateAddress, setCandidateAddress] = useState(0);
-  //FinishElectionメソッド用定数
-  const [chairman, setChairman] = useState("");
   // ユーザーのパブリックウォレットを保存するために使用する状態変数を定義します。
   const [currentAccount, setCurrentAccount] = useState("");
   console.log("currentAccount: ", currentAccount);
@@ -59,6 +60,7 @@ export default function App() {
         const account = accounts[0];
         console.log("Found an authorized account:", account);
         setCurrentAccount(account);
+        getAllCandidates();
       } else {
         console.log("No authorized account found");
       }
@@ -98,6 +100,7 @@ export default function App() {
   };
 
   //スマコン側のメソッドの実装
+  // candidates配列の取得メソッド
   const getAllCandidates = async () => {
     const { ethereum } = window;
     try {
@@ -112,10 +115,9 @@ export default function App() {
         const candidates = await electionPortalContract.GetAllCandidates();
         const candidatesCleaned = candidates.map((candidate) => {
           return {
+            address: candidate.myAddress,
             name: candidate.name,
             publicPromise: candidate.publicPromise,
-            address: candidate.myAddress,
-            voteCount: candidate.voteCount,
           };
         });
         setAllCandidates(candidatesCleaned);
@@ -139,10 +141,36 @@ export default function App() {
           contractABI,
           signer
         );
-        const runForTxn = await electionPortalContract.RunForChairman("", "");
+        const runForTxn = await electionPortalContract.RunForChairman(
+          name,
+          publicPromise
+        );
         console.log("Mining...", runForTxn.hash);
         await runForTxn.wait();
         console.log("Mined --", runForTxn.hash);
+      } else {
+        console.log("Ethereum object doesn't exiat!");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  //選挙期間取得メソッド
+  const GetElectionPeriod = async () => {
+    try {
+      const { ethereum } = window;
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+        const electionPortalContract = new ethers.Contract(
+          contractAddress,
+          contractABI,
+          signer
+        );
+        const getElectionPeriodTxn =
+          await electionPortalContract.GetElectionPeriod();
+        let dateTime = new Date(getElectionPeriodTxn * 1000);
+        setElectionPeriod(dateTime.toString());
       } else {
         console.log("Ethereum object doesn't exiat!");
       }
@@ -207,12 +235,35 @@ export default function App() {
           signer
         );
         const finishElectionTxn = await electionPortalContract.FinishElection();
-        console.log(chairman);
-        setChairman(finishElectionTxn.toString());
-        console.log(chairman);
         console.log("Mining...", finishElectionTxn.hash);
         await finishElectionTxn.wait();
+        console.log(finishElectionTxn);
+        console.log("allCandidates:", allCandidates);
+        console.log(electionPeriod);
         console.log("Mined --", finishElectionTxn.hash);
+        GetNewChairman();
+      } else {
+        console.log("Ethereum object doesn't exiat!");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const GetNewChairman = async () => {
+    try {
+      const { ethereum } = window;
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+        const electionPortalContract = new ethers.Contract(
+          contractAddress,
+          contractABI,
+          signer
+        );
+        const getNewChairman = await electionPortalContract.GetNewChairman();
+        console.log("New chairman is ", getNewChairman);
+        setCurrentChairman(getNewChairman);
       } else {
         console.log("Ethereum object doesn't exiat!");
       }
@@ -236,21 +287,43 @@ export default function App() {
 
   // WEBページがロードされたときに下記の関数を実行します。
   useEffect(() => {
-    checkIfWalletIsConnected();
     let electionPortalContract;
 
-    const onNewCandidate = (candidateName, candidatePublicPromise) => {
-      console.log("NewCandidate", candidateName,candidatePublicPromise);
-      setAllCandidates(prevState) => [
+    const onNewCandidate = (candidateAddress, name, publicPromise) => {
+      console.log("NewCandidate", candidateAddress, name, publicPromise);
+      setAllCandidates((prevState) => [
         ...prevState,
         {
-          name: candidateName,
-          publicPromise: candidatePublicPromise,
-          address: candidates.myAddress,
-          
-        }
-      ]
+          address: candidateAddress,
+          name: name,
+          publicPromise: publicPromise,
+        },
+      ]);
     };
+
+    /* NewWaveイベントがコントラクトから発信されたときに、情報を受け取ります */
+    if (window.ethereum) {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+
+      electionPortalContract = new ethers.Contract(
+        contractAddress,
+        contractABI,
+        signer
+      );
+      electionPortalContract.on("NewCandidate", onNewCandidate);
+    }
+    /*メモリリークを防ぐために、イベントを解除します*/
+    return () => {
+      if (electionPortalContract) {
+        electionPortalContract.off("NewCandidate", onNewCandidate);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    checkIfWalletIsConnected();
+    GetElectionPeriod();
   }, []);
 
   return (
@@ -371,7 +444,7 @@ export default function App() {
                     <Autocomplete
                       id="country-select-demo"
                       sx={{ width: 300 }}
-                      options={candidates}
+                      options={allCandidates}
                       autoHighlight
                       getOptionLabel={(option) => option.name}
                       renderOption={(props, option) => (
@@ -440,6 +513,28 @@ export default function App() {
             </Stack>
           </Container>
         </Box>
+        {currentAccount &&
+          allCandidates
+            .slice(0)
+            .reverse()
+            .map((candidate, index) => {
+              return (
+                <div
+                  key={index}
+                  style={{
+                    backgroundColor: "#F8F8FF",
+                    marginTop: "16px",
+                    padding: "8px",
+                  }}
+                >
+                  <div>Address: {candidate.address}</div>
+                  <div>Name: {candidate.name}</div>
+                  <div>PublicPromise: {candidate.publicPromise}</div>
+                </div>
+              );
+            })}
+        <div>This election will finsh at {electionPeriod}</div>
+        <div>Current Chairman: {currentChairman}</div>
       </main>
     </ThemeProvider>
   );

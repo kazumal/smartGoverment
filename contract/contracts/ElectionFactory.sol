@@ -26,11 +26,25 @@ contract ElectionFactory {
     uint electionDuration = 1 minutes;
     uint sumOfCandidates;
     uint sumOfVoters;
+    string currentChairman;
 
-    event NewElectionStarted(uint electionPeriod);
-    event NewCandidate(string name, string publicPromise);
-    event VotedCandidate(address indexed from, string name);
-    event ElectionFinished(string newChairmanName, uint voteCount);
+    event StartNewElection(uint electionPeriod);
+    event NewCandidate(
+        address candidateAddress,
+        string name,
+        string publicPromise
+    );
+    event VoteSomeone(
+        address indexed from,
+        address indexed to,
+        string candidateName
+    );
+    event VoteAbstain(address indexed from);
+    event NewChairman(
+        string newChairmanName,
+        string publicPromise,
+        uint voteCount
+    );
 
     modifier onlyNoncandidate() {
         if (sumOfCandidates == 0) {
@@ -74,7 +88,7 @@ contract ElectionFactory {
         candidateIdToCandidateInfo[candidates.length - 1] = candidates[
             candidates.length - 1
         ];
-        emit NewCandidate(_name, _publicPromise);
+        emit NewCandidate(msg.sender, _name, _publicPromise);
     }
 
     function GetAllCandidates() public view returns (Candidate[] memory) {
@@ -91,35 +105,30 @@ contract ElectionFactory {
         return (candidates.length);
     }
 
-    function Vote(address _candidateAddress)
+    function GetElectionPeriod() public view returns (uint) {
+        return (electionPeriod);
+    }
+
+    function Vote(address _to)
         public
-        checkFirstTimeVote
-    // onlyNoncandidate
+        checkFirstTimeVote // onlyNoncandidate
     {
         uint candidateId;
         voters.push(Voter(msg.sender));
-        candidateId = addressToCandidateId[_candidateAddress];
+        candidateId = addressToCandidateId[_to];
         candidates[candidateId].voteCount++;
-        emit VotedCandidate(msg.sender, candidates[candidateId].name);
+        emit VoteSomeone(msg.sender, _to, candidates[candidateId].name);
     }
 
     function VoteToAbstain() public checkFirstTimeVote {
         voters.push(Voter(msg.sender));
-        console.log("You voted to abstain.");
+        emit VoteAbstain(msg.sender);
     }
 
     function _StartElection() private checkFirstCandidate {
         electionPeriod = block.timestamp + electionDuration;
-        emit NewElectionStarted(electionPeriod);
-    }
-
-    function GetFinishTime() public view returns (uint) {
-        console.log(
-            "This election will finish at",
-            electionPeriod,
-            "on Linux Time."
-        );
-        return (electionPeriod);
+        console.log(electionPeriod);
+        emit StartNewElection(electionPeriod);
     }
 
     function _DecideNewChairman()
@@ -133,16 +142,29 @@ contract ElectionFactory {
                 winnerId = i;
             }
         }
+        console.log(winnerId);
+        console.log(mostVotedNum);
         return (winnerId, mostVotedNum);
     }
 
-    function FinishElection() public checkFinishTime returns (string memory) {
+    //modifier checkFinishTimeを忘れずに
+    function FinishElection() public returns (string memory) {
         uint mostVotedNum;
         uint winnerId;
         (winnerId, mostVotedNum) = _DecideNewChairman();
         sumOfCandidates = candidates.length;
         sumOfVoters = voters.length;
-        emit ElectionFinished(candidates[winnerId].name, mostVotedNum);
+        currentChairman = candidates[winnerId].name;
+        emit NewChairman(
+            candidates[winnerId].name,
+            candidates[winnerId].publicPromise,
+            mostVotedNum
+        );
+        console.log(candidates[winnerId].name);
         return (candidates[winnerId].name);
+    }
+
+    function GetNewChairman() public view returns (string memory) {
+        return (currentChairman);
     }
 }
