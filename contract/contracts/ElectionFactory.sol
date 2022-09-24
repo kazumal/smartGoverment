@@ -47,14 +47,10 @@ contract ElectionFactory {
     );
 
     modifier onlyNoncandidate() {
-        if (sumOfCandidates == 0) {
-            _;
-        } else {
-            for (uint i = sumOfCandidates; i < candidates.length; i++) {
-                require(candidates[i].myAddress != msg.sender);
-            }
-            _;
+        for (uint i = sumOfCandidates; i < candidates.length; i++) {
+            require(candidates[i].myAddress != msg.sender);
         }
+        _;
     }
 
     modifier checkFirstCandidate() {
@@ -63,14 +59,10 @@ contract ElectionFactory {
     }
 
     modifier checkFirstTimeVote() {
-        if (sumOfVoters == 0) {
-            _;
-        } else {
-            for (uint i = sumOfVoters; i < voters.length; i++) {
-                require(msg.sender != voters[i].voterAddress);
-            }
-            _;
+        for (uint i = sumOfVoters; i < voters.length; i++) {
+            require(msg.sender != voters[i].voterAddress);
         }
+        _;
     }
 
     modifier checkFinishTime() {
