@@ -25,15 +25,6 @@ const main = async () => {
   console.log(getAllCandidates);
   console.log(getAllCandidates[0].name);
 
-  let getSumOfCandidates;
-  getSumOfCandidates = await contract.GetSumOfCandidates();
-  console.log(getSumOfCandidates);
-
-  let getNumOfCandidates;
-  getNumOfCandidates = await contract.GetNumOfCandidates();
-  console.log(getNumOfCandidates);
-  console.log(getNumOfCandidates.toNumber());
-
   let vote;
   vote = await contract.Vote("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
   await vote.wait();

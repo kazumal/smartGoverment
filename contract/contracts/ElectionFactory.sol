@@ -65,7 +65,12 @@ contract ElectionFactory {
         _;
     }
 
-    modifier checkFinishTime() {
+    modifier checkIfNotFinish() {
+        require(electionPeriod > block.timestamp);
+        _;
+    }
+
+    modifier checkIfFinished() {
         require(electionPeriod < block.timestamp);
         _;
     }
@@ -83,27 +88,11 @@ contract ElectionFactory {
         emit NewCandidate(msg.sender, _name, _publicPromise);
     }
 
-    function GetAllCandidates() public view returns (Candidate[] memory) {
-        return candidates;
-    }
-
-    function GetSumOfCandidates() public view returns (uint) {
-        console.log("Num of sumOfCandidates is", sumOfCandidates);
-        return (sumOfCandidates);
-    }
-
-    function GetNumOfCandidates() public view returns (uint) {
-        console.log("Num of candidates.length is", candidates.length);
-        return (candidates.length);
-    }
-
-    function GetElectionPeriod() public view returns (uint) {
-        return (electionPeriod);
-    }
-
     function Vote(address _to)
         public
-        checkFirstTimeVote // onlyNoncandidate
+        checkFirstTimeVote
+        onlyNoncandidate
+        checkIfNotFinish
     {
         uint candidateId;
         voters.push(Voter(msg.sender));
@@ -112,7 +101,7 @@ contract ElectionFactory {
         emit VoteSomeone(msg.sender, _to, candidates[candidateId].name);
     }
 
-    function VoteToAbstain() public checkFirstTimeVote {
+    function VoteToAbstain() public checkFirstTimeVote checkIfNotFinish {
         voters.push(Voter(msg.sender));
         emit VoteAbstain(msg.sender);
     }
@@ -139,8 +128,7 @@ contract ElectionFactory {
         return (winnerId, mostVotedNum);
     }
 
-    //modifier checkFinishTimeを忘れずに
-    function FinishElection() public returns (string memory) {
+    function FinishElection() public checkIfFinished returns (string memory) {
         uint mostVotedNum;
         uint winnerId;
         (winnerId, mostVotedNum) = _DecideNewChairman();
@@ -158,5 +146,13 @@ contract ElectionFactory {
 
     function GetNewChairman() public view returns (string memory) {
         return (currentChairman);
+    }
+
+    function GetAllCandidates() public view returns (Candidate[] memory) {
+        return candidates;
+    }
+
+    function GetElectionPeriod() public view returns (uint) {
+        return (electionPeriod);
     }
 }
