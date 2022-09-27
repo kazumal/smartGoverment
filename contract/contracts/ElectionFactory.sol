@@ -23,7 +23,7 @@ contract ElectionFactory {
     mapping(address => uint) addressToCandidateId;
     mapping(uint => Candidate) candidateIdToCandidateInfo;
     uint electionPeriod;
-    uint electionDuration = 1 minutes;
+    uint electionDuration = 3 minutes;
     uint sumOfCandidates;
     uint sumOfVoters;
     string currentChairman;
@@ -50,11 +50,6 @@ contract ElectionFactory {
         for (uint i = sumOfCandidates; i < candidates.length; i++) {
             require(candidates[i].myAddress != msg.sender);
         }
-        _;
-    }
-
-    modifier checkFirstCandidate() {
-        require((candidates.length - sumOfCandidates) == 0);
         _;
     }
 
@@ -106,10 +101,12 @@ contract ElectionFactory {
         emit VoteAbstain(msg.sender);
     }
 
-    function _StartElection() private checkFirstCandidate {
-        electionPeriod = block.timestamp + electionDuration;
-        console.log(electionPeriod);
-        emit StartNewElection(electionPeriod);
+    function _StartElection() private {
+        if (electionPeriod < block.timestamp) {
+            electionPeriod = block.timestamp + electionDuration;
+            console.log(electionPeriod);
+            emit StartNewElection(electionPeriod);
+        }
     }
 
     function _DecideNewChairman()

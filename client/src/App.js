@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 
 const theme = createTheme();
-const contractAddress = "0xeA10bE9eD584063c653157Fcd1BDa87E2cF320cD";
+const contractAddress = "0xdB9F59576df4f2b833B9151aB4020B9df1850628";
 const contractABI = abi.abi;
 
 export default function App() {
@@ -143,8 +143,7 @@ export default function App() {
         );
         const runForTxn = await electionPortalContract.RunForChairman(
           name,
-          publicPromise,
-          { gasLimit: 500000 }
+          publicPromise
         );
         console.log("Mining...", runForTxn.hash);
         await runForTxn.wait();
