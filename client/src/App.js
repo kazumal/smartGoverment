@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 
 const theme = createTheme();
-const contractAddress = "0x988B6Dc06Dd5E82D93C21e3cdBf578a3ceBf41c6";
+const contractAddress = "0x7085af905e392f505D68ec6aC0B02e5B66B17FDC";
 const contractABI = abi.abi;
 
 export default function App() {
