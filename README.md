@@ -1,8 +1,8 @@
 # Smart-Goverment
 ## What is this dApp?
 Smart Goverment is demo election dApp to decide new chairman.
-Backend: solidity
-Frontend: JavaScript(React)
+- Backend: solidity
+- Frontend: JavaScript(React)
 
 ## Functions
 - Run for election
